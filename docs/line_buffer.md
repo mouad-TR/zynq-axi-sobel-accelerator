@@ -1,6 +1,7 @@
 # BRAM-Based Line Buffer for FPGA Vision Pipelines
 
 A VHDL implementation of a 3×3 sliding-window generator for streaming image data, built for the Zynq XC7Z020 (ALINX AX7020). This module converts a raster-scanned 1D pixel stream into a fully parallel 3×3 neighborhood, suitable for convolution-based image processing (Sobel, Harris, general 3×3 kernels) in a single clock cycle per pixel.
+<img width="640" height="480" alt="test_image" src="https://github.com/user-attachments/assets/7981ec53-f1db-416c-b36f-4f9e376468ec" />
 
 ---
 
@@ -39,7 +40,7 @@ Consider computing a Sobel-filtered output for pixel `(row, col)`. The math requ
 
 But the incoming stream only ever presents **one** of these 9 values at a time, and by the time row `row+1` arrives, row `row-1`'s pixels are long gone from the wire — unless something stored them.
 
-Naively, you could buffer the *entire image* and randomly-access it — but that costs far more memory than necessary and defeats the purpose of a streaming architecture (it also can't operate on data as it arrives from a live camera). The insight this design uses: **you only ever need the current row plus the two rows immediately above it.** Everything older than that is irrelevant to any future window.
+Naively, you could buffer the *entire image* and randomly-access it, but that costs far more memory than necessary and defeats the purpose of a streaming architecture (it also can't operate on data as it arrives from a live camera). The insight this design uses: **you only ever need the current row plus the two rows immediately above it.** Everything older than that is irrelevant to any future window.
 
 ---
 
@@ -58,7 +59,7 @@ Combining a live value + a 1-cycle-delayed value + a 2-cycle-delayed value for e
 
 ## Architecture
 
-**[PLACEHOLDER: Insert architecture block diagram here (e.g., a Draw.io export showing AXI-Stream -> 2x BRAM -> 3x Shift Registers)]**
+**<img width="1354" height="896" alt="Capture d&#39;écran 2026-07-14 175258" src="https://github.com/user-attachments/assets/1faca4b1-4b3f-4034-aad0-b855df19d3dd" />**
 
 ### Vertical delay: BRAM as a shift register
 
@@ -233,11 +234,9 @@ Documented here because these cost real debugging time and are easy to reintrodu
 
 1. **Missing stall-handling `else` branch (horizontal ghosting).** If `window_valid` (and any other state driven only inside the `pixel_valid = '1'` branch) doesn't have an explicit `else` clause forcing it low during stalls, a paused input stream (e.g. a DMA bus contention stall) leaves stale outputs marked "valid," causing the downstream stage to reprocess the same frozen window repeatedly. Visually, this manifested as a horizontal image shift with ghosted/duplicated content.
 
-   **[PLACEHOLDER: Insert image of the horizontally shifted/ghosted output here]**
+   **<img width="512" height="389" alt="bug" src="https://github.com/user-attachments/assets/065fc9f4-9a82-4bb5-9d3f-6b28c246e853" />**
 
 2. **BRAM read latency placement (diagonal shearing).** Initially, the read assignment `row1_pixel <= row_buf1(col_addr);` was placed inside the clocked `process(clk)`. This is correctly synthesized as a registered (sequential) read, introducing an unintended 1-clock-cycle delay relative to the rest of the window. This desynchronized the vertical columns of the window relative to each other, resulting in visible diagonal shearing across the output image. Moving the read to a combinatorial (0-cycle) assignment realigned the rows and resolved the shearing.
-
-   **[PLACEHOLDER: Insert image of the diagonally sheared output here]**
 
 3. **A single flipped bit in the `window_valid` warm-up logic silently disables the entire pipeline.** The branch intended to assert `window_valid <= '1'` once the BRAMs are full was, at one point, mistakenly left as `'0'` (a copy-paste artifact) — this produces no compile-time error, and downstream stages simply never receive a valid window, with no obvious symptom other than wrong/blank output. Always double check this specific line after any edit near it.
 
@@ -265,4 +264,4 @@ lb: entity work.line_buffer
 
 Downstream, a compute stage (e.g. a Sobel filter) consumes `window_sig`/`window_valid_sig` and should be gated identically — ignore/hold output whenever `window_valid_sig = '0'`.
 
-**[PLACEHOLDER: Insert final, correctly edge-detected output image here]**
+**<img width="512" height="389" alt="output" src="https://github.com/user-attachments/assets/48528e6a-5b9a-488a-8007-b2a0380edf66" />**
