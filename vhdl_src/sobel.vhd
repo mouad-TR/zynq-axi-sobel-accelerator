@@ -19,9 +19,9 @@ end entity sobel;
 
 architecture rtl of sobel is
 
-    signal gx, gy   : signed(10 downto 0);  -- 11-bit signed, as we sized
-    signal abs_gx, abs_gy : unsigned(9 downto 0);  -- 10-bit unsigned (0-1023)
-    signal magnitude : unsigned(10 downto 0);       -- 11-bit unsigned (0-2047)
+    signal gx, gy   : signed(10 downto 0);  -- 11-bit signed
+    signal abs_gx, abs_gy : unsigned(9 downto 0);  -- 10-bit unsigned
+    signal magnitude : unsigned(10 downto 0);       -- 11-bit unsigned
 
 begin
     process(clk)
