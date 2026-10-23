@@ -1,4 +1,4 @@
-# Zynq-7000 Edge AI Vision: Hardware-Accelerated Sobel Pipeline
+# Zynq-7000 Computer Vision: Hardware-Accelerated Sobel Pipeline
 
 ## Overview
 This project implements a bare-metal hardware/software co-design for real-time edge detection on an ALINX AX7020 (Zynq XC7Z020) SoC. It streams image data from DDR memory to the FPGA fabric via AXI DMA, processes it through a custom VHDL Sobel convolution engine, and writes the output back to memory.
